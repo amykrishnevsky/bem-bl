@@ -94,59 +94,21 @@ default: {
                 v.mix && (mix = mix? mix.concat(v.mix) : v.mix);
 
                 if(mix) {
-                    var visited = {};
-
-                    function visitedKey(block, elem) {
-                      return (block || '') + '__' + (elem || '');
-                    }
-
-                    visited[visitedKey(this.block, this.elem)] = true;
-
-                    // Transform mix to the single-item array if it's not array
-                    if (!this._.isArray(mix)) mix = [mix];
-                    for (var i = 0; i < mix.length; i++) {
-                        var mixItem = mix[i],
-                            hasItem = mixItem.block || mixItem.elem,
-                            block = mixItem.block || mixItem._block || _this.block,
-                            elem = mixItem.elem || mixItem._elem || _this.elem;
+                    var i = 0, l = mix.length, mixItem, hasItem, block;
+                    while(i < l) {
+                        mixItem = mix[i++];
+                        hasItem = mixItem.block || mixItem.elem,
+                        block = mixItem.block || _this.block;
 
                         hasItem && buf.push(' ');
                         BEM_.INTERNAL[hasItem? 'buildClasses' : 'buildModsClasses'](
                             block,
-                            mixItem.elem || mixItem._elem ||
-                                (mixItem.block ? undefined : _this.elem),
+                            mixItem.elem || (mixItem.block ? undefined : _this.elem),
                             mixItem.elemMods || mixItem.mods,
                             buf);
-
                         if(mixItem.js) {
                             (jsParams || (jsParams = {}))[BEM_.INTERNAL.buildClass(block, mixItem.elem)] = mixItem.js === true? {} : mixItem.js;
                             addJSInitClass || (addJSInitClass = block && !mixItem.elem);
-                        }
-
-                        // Process nested mixes
-                        if (hasItem && !visited[visitedKey(block, elem)]) {
-                            visited[visitedKey(block, elem)] = true;
-                            var nestedMix = apply(
-                              this.block = block,
-                              this.elem = elem,
-                              'mix'
-                            );
-
-                            if (nestedMix) {
-                                for (var j = 0; j < nestedMix.length; j++) {
-                                    var nestedItem = nestedMix[j];
-                                    if (!nestedItem.block &&
-                                        !nestedItem.elem ||
-                                        !visited[visitedKey(
-                                          nestedItem.block,
-                                          nestedItem.elem
-                                        )]) {
-                                        nestedItem._block = block;
-                                        nestedItem._elem = elem;
-                                        mix.splice(i + 1, 0, nestedItem);
-                                    }
-                                }
-                            }
                         }
                     }
                 }
@@ -170,10 +132,8 @@ default: {
         attrs = this._.extend(attrs, v.attrs); // NOTE: возможно стоит делать массив, чтобы потом быстрее сериализовывать
         if(attrs) {
             var name; // TODO: разобраться с OmetaJS и YUI Compressor
-            for(name in attrs) {
-              if (attrs[name] === undefined) continue;
-              buf.push(' ', name, '="', this._.attrEscape(attrs[name]), '"');
-            }
+            for(name in attrs)
+            buf.push(' ', name, '="', this._.attrEscape(attrs[name]), '"');
         }
     }
 
@@ -213,7 +173,7 @@ content: this.ctx.content
             area : 1, base : 1, br : 1, col : 1, command : 1, embed : 1, hr : 1, img : 1,
             input : 1, keygen : 1, link : 1, meta : 1, param : 1, source : 1, wbr : 1 };
 
-    /** @fileOverview  - module for internal BEM helpers */
+    /** @fileOverview - module for internal BEM helpers */
     /** @requires BEM */
 
     (function(BEM, undefined) {
@@ -226,7 +186,7 @@ content: this.ctx.content
     var MOD_DELIM = '_',
 
     /**
-     * Separator between names of a block and a nested element
+     * Separator between block names and a nested element
      * @const
      * @type String
      */
@@ -278,13 +238,13 @@ content: this.ctx.content
         /**
          * Builds the class for a block or element with a modifier
          * @private
-         * @param {String} block - block name
-         * @param {String} [elem] - element name
-         * @param {String} [modName] - modifier name
-         * @param {String} [modVal] - element name
-         * @param {Array} [buffer] - buffer
-         * @returns {String|Array} - class or buffer string (depending on whether the buffer parameter is present)
-         */
+         * @param {String} block Block name
+         * @param {String} [elem] Element name
+         * @param {String} [modName] Modifier name
+         * @param {String} [modVal] Element name
+         * @param {Array} [buffer] Buffer
+         * @returns {String|Array} Class or buffer string (depending on whether the buffer parameter is present)
+    	 */
         buildClass : function(block, elem, modName, modVal, buffer) {
 
             var typeOf = typeof modName;
@@ -320,11 +280,11 @@ content: this.ctx.content
         /**
          * Builds modifier classes
          * @private
-         * @param {String} block - block name
-         * @param {String} [elem] - element name
-         * @param {Object} [mods] - modifier name
-         * @param {Array} [buffer] - buffer
-         * @returns {String|Array} - class or buffer string (depending on whether the buffer parameter is present)
+         * @param {String} block Block name
+         * @param {String} [elem] Element name
+         * @param {Object} [mods] Modifier name
+         * @param {Array} [buffer] Buffer
+         * @returns {String|Array} Class or buffer string (depending on whether the buffer parameter is present)
          */
         buildModsClasses : function(block, elem, mods, buffer) {
 
@@ -333,7 +293,7 @@ content: this.ctx.content
             if(mods) {
                 var modName; // TODO: разобраться с OmetaJS и YUI Compressor
                 for(modName in mods)
-                    if(mods.hasOwnProperty(modName) && mods[modName] && mods[modName].toString().length) {
+                    if(mods.hasOwnProperty(modName) && mods[modName]) {
                         var modVal = mods[modName];
                         res.push(' ');
                         elem?
@@ -346,14 +306,14 @@ content: this.ctx.content
 
         },
 
-         /**
+        /**
          * Builds full classes for a block or element with modifiers
          * @private
-         * @param {String} block - block name
-         * @param {String} [elem] - element name
-         * @param {Object} [mods] - modifier name
-         * @param {Array} [buffer] - buffer
-         * @returns {String|Array} - class or buffer string (depending on whether the buffer parameter is present)
+         * @param {String} block Block name
+         * @param {String} [elem] Element name
+         * @param {Object} [mods] Modifier name
+         * @param {Array} [buffer] Buffer
+         * @returns {String|Array} Class or buffer string (depending on whether the buffer parameter is present)
          */
         buildClasses : function(block, elem, mods, buffer) {
 
